@@ -3,14 +3,15 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-const long int QUANTITY = 5000000000L;
+const long int QUANTITY = 50000000L;
 const double half = QUANTITY / 2.0;
 
 pthread_mutex_t lock;
 
+double value = 0L;
+
 typedef struct params {
   long int quantity;
-  double res;
 } params;
 
 double calculo_pi(long int n) {
@@ -31,10 +32,9 @@ void *calc(void *arg) {
     pthread_mutex_lock(&lock);
     double sinal = i % 2 == 0 ? 1.0 : -1.0;
     sum += sinal / (2.0 * i + 1.0);
-    p->res = sum;
     pthread_mutex_unlock(&lock);
   }
-  p->res = sum * 4;
+  value = 4 * sum;
 }
 
 int main() {
@@ -55,7 +55,7 @@ int main() {
   pthread_join(threads[0], NULL);
   pthread_join(threads[1], NULL);
 
-  printf("Result: %.20lf\n", p->res);
+  printf("Result: %.20lf\n", value);
 
   free(p);
 }
