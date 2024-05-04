@@ -17,6 +17,10 @@ typedef struct head_t {
 
 // Inserts a value if the list is empty;
 static void insert_empty_list(head *list_header, double val) {
+  if (!list_header) {
+    printf("Invalid operation: head must not be null");
+    exit(1);
+  }
   list *new_node = (list *)malloc(sizeof(list));
   if (!new_node) {
     printf("Error allocating memory with malloc!\n");
@@ -30,6 +34,10 @@ static void insert_empty_list(head *list_header, double val) {
 }
 
 void insert_last(head *list_header, double val) {
+  if (!list_header) {
+    printf("Invalid operation: head must not be null");
+    exit(1);
+  }
   list *tmp = list_header->list;
   if (!tmp) {
     insert_empty_list(list_header, val);
@@ -50,6 +58,10 @@ void insert_last(head *list_header, double val) {
 }
 
 void insert_first(head *list_header, double val) {
+  if (!list_header) {
+    printf("Invalid operation: head must not be null");
+    exit(1);
+  }
   list *tmp = list_header->list;
   if (!tmp) {
     insert_empty_list(list_header, val);
@@ -67,6 +79,10 @@ void insert_first(head *list_header, double val) {
 }
 
 void remove_first(head *list_header) {
+  if (!list_header) {
+    printf("Invalid operation: head must not be null");
+    exit(1);
+  }
   list *tmp = list_header->list;
   if (!tmp) {
     printf("List already empty.\n");
