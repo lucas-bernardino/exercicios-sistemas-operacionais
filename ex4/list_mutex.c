@@ -1,4 +1,5 @@
 #include <pthread.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -14,6 +15,7 @@ typedef struct head_t {
   list *list;
 } head;
 
+// Inserts a value if the list is empty;
 static void insert_empty_list(head *list_header, double val) {
   list *new_node = (list *)malloc(sizeof(list));
   if (!new_node) {
@@ -64,6 +66,16 @@ void insert_first(head *list_header, double val) {
   list_header->size++;
 }
 
+void remove_first(head *list_header) {
+  list *tmp = list_header->list;
+  if (!tmp) {
+    printf("List already empty.\n");
+    return;
+  }
+  list_header->list = tmp->next;
+  free(tmp);
+}
+
 head *initialize_list(size_t size, double default_value) {
   head *list_header = (head *)malloc(sizeof(head));
   if (!list_header) {
@@ -85,6 +97,18 @@ int main() {
   printf("Value 1: %f\n", header->list->value);
   printf("Value 2: %f\n", header->list->next->value);
   printf("Value 3: %f\n", header->list->next->next->value);
-  printf("Size: %lu", header->size);
+  // printf("Size: %lru\n", header->size);
+  remove_first(header);
+  printf("After remove_first\n");
+  printf("Value 1: %f\n", header->list->value);
+  printf("Value 2: %f\n", header->list->next->value);
+  head *header2 = initialize_list(0, 0);
+  remove_first(header2);
+  /* OUTPUT:
+  Value 1: 1.000000
+  Value 2: 69.000000
+  Value 3: 9.000000
+  Size: 3
+   */
   return 0;
 }
