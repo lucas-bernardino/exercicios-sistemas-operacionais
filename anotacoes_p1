@@ -1,0 +1,30 @@
+* Cada processo tem sua região da memória e um processo não precisa saber da existência do outro, já que não há compartilhamento de memória
+entre processos.
+* Processo: é um programa em execucação. Os processos não sabem que estão disputando recursos.
+* Estados de um processo: Em execução, Bloqueado e Pronto. Ele fica alternando esse ciclo.
+--- ---  --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- 
+* Mudar entre processos é mais lento e as vezes é necessário compartilhar a mesma memória, por isso Threads são alternativas válidas.
+* Thread: Fluxo de execução de um processo. É mais leve que um processo e cada processo tem uma ou mais threads e compartilha a memória
+com as outras threads do processo.
+
+* Condições de corrida:
+  * Existem processos que produzem dados e processos que consomem.
+  * O problema disso é que há memória/recurso compartilhado sendo acessado sem controle
+  * Assim, torna-se algo imprevesível o output, pois depende de quem acessa o dado primeiro.
+  * Uma solução pra esse problema é existir uma exclusão mutua entre processos na região crítica do código.
+  * Nessa região crítica, apenas um processo pode acessar a região por vez, e um processo não pode estar bloqueado se a região crítica
+  está livre ou ficar esperando para sempre.
+  * Usa-se uma variável de trava (lock) para verificar se a região está liver ou se está sendo executada. Aí que entra o mutex.
+  * pthread_mutex_t: estrutura para guardar o mutex,
+  * mutex_lock(&phtread_mutex_t): trancar,
+  * mutex_unlock(&pthread_mutex_t): destrancar,
+
+* Semáforos:
+  * Estratégia para garantir exclusão mútua com uma variável condicional, utilizando uma variável contadora.
+  * Assim, ao utilizar semafóros há basicamente duas funções: DOWN and UP
+  * DOWN seria tentar decrementar a varíavel. Se for maior que 0, continua. Se igual ou menor que 0, bloqueia e adiciona na lista de espera.
+  * UP incrementa a varíavel contadora. Se um processo estiver bloqueado, desbloqueie alguém da lista de espera.
+
+* Existem outras estratégias também, como monitores, comunicação por trocas de mensagem e pipes.
+* Pipes: Um processo escreve dados enquanto o outro processo consome. É uma comunicação unidirecional entre processos.
+* Interface de enviar e receber mensagens: é comunicação bidirecional e ambos os processos podem enviar ou receber mensagens.
