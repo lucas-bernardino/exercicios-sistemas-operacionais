@@ -15,6 +15,11 @@ typedef struct head_t {
   list *list;
 } head;
 
+typedef struct my_list_t {
+  head* header;
+  double value;
+} my_list;
+
 // Inserts a value if the list is empty;
 static void insert_empty_list(head *list_header, double val) {
   if (!list_header) {
@@ -69,14 +74,15 @@ void insert_last(head *list_header, double val) {
   list_header->size++;
 }
 
-void insert_first(head *list_header, double val) {
-  if (!list_header) {
+void *insert_first(void *arg) {
+  my_list *l = (my_list *) arg;
+  if (!l->header) {
     printf("Invalid operation: head must not be null");
     exit(1);
   }
-  list *tmp = list_header->list;
+  list *tmp = l->header->list;
   if (!tmp) {
-    insert_empty_list(list_header, val);
+    insert_empty_list(l->header, l->value);
     return;
   }
   list *node = (list *)malloc(sizeof(list));
@@ -84,10 +90,12 @@ void insert_first(head *list_header, double val) {
     printf("Error allocating memory with malloc!\n");
     exit(1);
   }
-  node->value = val;
-  list_header->list = node;
+  node->value = l->value;
+  l->header->list = node;
   node->next = tmp;
-  list_header->size++;
+  l->header->size++;
+
+  return NULL;
 }
 
 void remove_first(head *list_header) {
@@ -133,15 +141,16 @@ head *initialize_list(size_t size, double default_value) {
 }
 
 int main() {
-  printf("Will it work?\n");
-  head *header = initialize_list(1, 69);
-  insert_last(header, 9);
-  insert_first(header, 1);
-  // printf("Value 1: %f\n", header->list->value);
-  // printf("Value 2: %f\n", header->list->next->value);
-  // printf("Value 3: %f\n", header->list->next->next->value);
-  // printf("Size: %lru\n", header->size); Result: 1, 69, 9
-  remove_last(header);
-  print_list(header);
+  pthread_t threads[1];
+
+  my_list* list = (my_list *)malloc(sizeof(my_list));
+  list->header = initialize_list(4, 5);
+  list->value = 10;
+
+  pthread_create(&threads[0], NULL, &insert_first, list);
+
+  pthread_join(threads[0], NULL);
+
+  print_list(list->header);  
   return 0;
 }
