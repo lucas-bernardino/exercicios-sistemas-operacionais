@@ -5,6 +5,8 @@
 #include <time.h>
 #include <unistd.h>
 
+pthread_mutex_t lock;
+
 typedef struct list_t {
   double value;
   struct list_t *next;
@@ -75,6 +77,7 @@ void insert_last(head *list_header, double val) {
 }
 
 void *insert_first(void *arg) {
+  pthread_mutex_lock(&lock);
   my_list *l = (my_list *) arg;
   if (!l->header) {
     printf("Invalid operation: head must not be null");
@@ -94,7 +97,7 @@ void *insert_first(void *arg) {
   l->header->list = node;
   node->next = tmp;
   l->header->size++;
-
+  pthread_mutex_unlock(&lock);
   return NULL;
 }
 
@@ -141,15 +144,21 @@ head *initialize_list(size_t size, double default_value) {
 }
 
 int main() {
-  pthread_t threads[1];
+  pthread_t threads[3];
 
   my_list* list = (my_list *)malloc(sizeof(my_list));
   list->header = initialize_list(4, 5);
   list->value = 10;
 
-  pthread_create(&threads[0], NULL, &insert_first, list);
+  pthread_mutex_init(&lock, NULL);
 
+  pthread_create(&threads[0], NULL, &insert_first, list);
+  pthread_create(&threads[1], NULL, &insert_first, list);
+  pthread_create(&threads[2], NULL, &insert_first, list);
   pthread_join(threads[0], NULL);
+  pthread_join(threads[1], NULL);
+  pthread_join(threads[2], NULL);
+
 
   print_list(list->header);  
   return 0;
