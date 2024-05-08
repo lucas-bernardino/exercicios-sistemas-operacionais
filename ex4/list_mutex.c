@@ -92,6 +92,21 @@ void remove_first(head *list_header) {
   free(tmp);
 }
 
+void remove_last(head *list_header) {
+  if (!list_header) {
+    printf("Invalid operation: head must not be null");
+    exit(1);
+  }
+  list *tmp = list_header->list;
+  while (tmp->next->next) {
+    tmp = tmp->next;
+  }
+  list* tmp_free = tmp->next;
+  tmp->next = NULL;
+  free(tmp_free);
+  list_header->size--;
+}
+
 head *initialize_list(size_t size, double default_value) {
   head *list_header = (head *)malloc(sizeof(head));
   if (!list_header) {
