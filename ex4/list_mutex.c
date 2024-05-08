@@ -33,6 +33,18 @@ static void insert_empty_list(head *list_header, double val) {
   return;
 }
 
+static void print_list(head *list_header) {
+  if (!list_header) {
+    printf("Invalid operation: head must not be null");
+    exit(1);
+  }
+  list* tmp = list_header->list;
+  while (tmp) {
+    printf("Value stored: %f\n", tmp->value);
+    tmp = tmp->next;
+  }
+}
+
 void insert_last(head *list_header, double val) {
   if (!list_header) {
     printf("Invalid operation: head must not be null");
@@ -125,21 +137,11 @@ int main() {
   head *header = initialize_list(1, 69);
   insert_last(header, 9);
   insert_first(header, 1);
-  printf("Value 1: %f\n", header->list->value);
-  printf("Value 2: %f\n", header->list->next->value);
-  printf("Value 3: %f\n", header->list->next->next->value);
-  // printf("Size: %lru\n", header->size);
-  remove_first(header);
-  printf("After remove_first\n");
-  printf("Value 1: %f\n", header->list->value);
-  printf("Value 2: %f\n", header->list->next->value);
-  head *header2 = initialize_list(0, 0);
-  remove_first(header2);
-  /* OUTPUT:
-  Value 1: 1.000000
-  Value 2: 69.000000
-  Value 3: 9.000000
-  Size: 3
-   */
+  // printf("Value 1: %f\n", header->list->value);
+  // printf("Value 2: %f\n", header->list->next->value);
+  // printf("Value 3: %f\n", header->list->next->next->value);
+  // printf("Size: %lru\n", header->size); Result: 1, 69, 9
+  remove_last(header);
+  print_list(header);
   return 0;
 }
