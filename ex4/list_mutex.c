@@ -20,6 +20,7 @@ typedef struct head_t {
 typedef struct my_list_t {
   head* header;
   double value;
+  bool is_main_thread;
 } my_list;
 
 // Inserts a value if the list is empty;
@@ -56,6 +57,9 @@ static void print_list(head *list_header) {
 
 void insert_last(void *arg) {
   my_list *l = (my_list *)arg;
+  if (!l->is_main_thread) {
+    pthread_mutex_lock(&lock);
+  }
   if (!l->header) {
     printf("Invalid operation: head must not be null");
     exit(1);
@@ -77,6 +81,9 @@ void insert_last(void *arg) {
   new_node->next = NULL;
   tmp->next = new_node;
   l->header->size++;
+  if (!l->is_main_thread) {
+    pthread_mutex_unlock(&lock);
+  }
 }
 
 void *insert_first(void *arg) {
@@ -144,17 +151,18 @@ my_list* initialize_list(size_t size, double default_value) {
   }
   l->header = (head *)malloc(sizeof(head));
   l->value = default_value;
+  l->is_main_thread = true;
   for (size_t i = 0; i < size; i++) {
     insert_last(l);
   }
+  l->is_main_thread = false;
   return l;
 }
 
 int main() {
-  pthread_t threads[4];
+  pthread_t threads[6];
 
   my_list* list = initialize_list(4, 5);
-
   pthread_mutex_init(&lock, NULL);
 
   list->value = 10;
@@ -174,7 +182,12 @@ int main() {
   pthread_join(threads[3], NULL);
   
   printf("After removing the first element: \n");
+  print_list(list->header);
 
+  pthread_create(&threads[4], NULL, &remove_first, list);
+  pthread_join(threads[4], NULL);
+
+  printf("After removing the second element: \n");
   print_list(list->header);
 
   return 0;
