@@ -128,19 +128,22 @@ void *remove_first(void *arg) {
   pthread_mutex_unlock(&lock);
 }
 
-void remove_last(head *list_header) {
-  if (!list_header) {
+void *remove_last(void *arg) {
+  pthread_mutex_lock(&lock);
+  my_list *l = (my_list *) arg;
+  if (!l->header) {
     printf("Invalid operation: head must not be null");
     exit(1);
   }
-  list *tmp = list_header->list;
+  list *tmp = l->header->list;
   while (tmp->next->next) {
     tmp = tmp->next;
   }
   list* tmp_free = tmp->next;
   tmp->next = NULL;
   free(tmp_free);
-  list_header->size--;
+  l->header->size--;
+  pthread_mutex_unlock(&lock);
 }
 
 my_list* initialize_list(size_t size, double default_value) {
@@ -188,6 +191,12 @@ int main() {
   pthread_join(threads[4], NULL);
 
   printf("After removing the second element: \n");
+  print_list(list->header);
+
+  printf("After removing the last element: \n");
+  pthread_create(&threads[4], NULL, &remove_last, list);
+  pthread_join(threads[4], NULL);
+
   print_list(list->header);
 
   return 0;
