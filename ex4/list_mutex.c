@@ -140,9 +140,8 @@ my_list* initialize_list(size_t size, double default_value) {
     printf("Error allocating memory with malloc!\n");
     exit(1);
   }
-  printf("Got here 1.");
   l->header = (head *)malloc(sizeof(head));
-  printf("Got here 2.");
+  l->value = default_value;
   for (size_t i = 0; i < size; i++) {
     insert_last(l);
   }
@@ -157,13 +156,14 @@ int main() {
 
   pthread_mutex_init(&lock, NULL);
 
+  print_list(list->header);
+
   pthread_create(&threads[0], NULL, &insert_first, list);
   pthread_create(&threads[1], NULL, &insert_first, list);
   pthread_create(&threads[2], NULL, &insert_first, list);
   pthread_join(threads[0], NULL);
   pthread_join(threads[1], NULL);
   pthread_join(threads[2], NULL);
-
 
   print_list(list->header);
   return 0;
