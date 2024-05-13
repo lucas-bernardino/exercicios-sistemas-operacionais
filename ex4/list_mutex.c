@@ -23,8 +23,10 @@ typedef struct my_list_t {
 } my_list;
 
 // Inserts a value if the list is empty;
-static void insert_empty_list(head *list_header, double val) {
-  if (!list_header) {
+static void insert_empty_list(void *arg) {
+  my_list *l = (my_list *)arg;
+
+  if (!l->header) {
     printf("Invalid operation: head must not be null");
     exit(1);
   }
@@ -33,10 +35,10 @@ static void insert_empty_list(head *list_header, double val) {
     printf("Error allocating memory with malloc!\n");
     exit(1);
   }
-  new_node->value = val;
+  new_node->value = l->value;
   new_node->next = NULL;
-  list_header->list = new_node;
-  list_header->size++;
+  l->header->list = new_node;
+  l->header->size++;
   return;
 }
 
@@ -52,14 +54,16 @@ static void print_list(head *list_header) {
   }
 }
 
-void insert_last(head *list_header, double val) {
-  if (!list_header) {
+void insert_last(void *arg) {
+  my_list *l = (my_list *)arg;
+
+  if (!l->header) {
     printf("Invalid operation: head must not be null");
     exit(1);
   }
-  list *tmp = list_header->list;
+  list *tmp = l->header->list;
   if (!tmp) {
-    insert_empty_list(list_header, val);
+    insert_empty_list(l);
     return;
   }
   while (tmp->next) {
@@ -70,10 +74,10 @@ void insert_last(head *list_header, double val) {
     printf("Error allocating memory with malloc!\n");
     exit(1);
   }
-  new_node->value = val;
+  new_node->value = l->value;
   new_node->next = NULL;
   tmp->next = new_node;
-  list_header->size++;
+  l->header->size++;
 }
 
 void *insert_first(void *arg) {
@@ -85,8 +89,8 @@ void *insert_first(void *arg) {
   }
   list *tmp = l->header->list;
   if (!tmp) {
-    insert_empty_list(l->header, l->value);
-    return;
+    insert_empty_list(l);
+    return NULL;
   }
   list *node = (list *)malloc(sizeof(list));
   if (!node) {
@@ -130,24 +134,25 @@ void remove_last(head *list_header) {
   list_header->size--;
 }
 
-head *initialize_list(size_t size, double default_value) {
-  head *list_header = (head *)malloc(sizeof(head));
-  if (!list_header) {
+my_list* initialize_list(size_t size, double default_value) {
+  my_list* l = (my_list *)malloc(sizeof(my_list));
+  if (!l) {
     printf("Error allocating memory with malloc!\n");
     exit(1);
   }
-  list_header->list = NULL;
+  printf("Got here 1.");
+  l->header = (head *)malloc(sizeof(head));
+  printf("Got here 2.");
   for (size_t i = 0; i < size; i++) {
-    insert_last(list_header, default_value);
+    insert_last(l);
   }
-  return list_header;
+  return l;
 }
 
 int main() {
   pthread_t threads[3];
 
-  my_list* list = (my_list *)malloc(sizeof(my_list));
-  list->header = initialize_list(4, 5);
+  my_list* list = initialize_list(4, 5);
   list->value = 10;
 
   pthread_mutex_init(&lock, NULL);
@@ -160,6 +165,6 @@ int main() {
   pthread_join(threads[2], NULL);
 
 
-  print_list(list->header);  
+  print_list(list->header);
   return 0;
 }
