@@ -56,7 +56,6 @@ static void print_list(head *list_header) {
 
 void insert_last(void *arg) {
   my_list *l = (my_list *)arg;
-
   if (!l->header) {
     printf("Invalid operation: head must not be null");
     exit(1);
@@ -105,18 +104,21 @@ void *insert_first(void *arg) {
   return NULL;
 }
 
-void remove_first(head *list_header) {
-  if (!list_header) {
+void *remove_first(void *arg) {
+  pthread_mutex_lock(&lock);
+  my_list *l = (my_list *) arg;
+  if (!l->header) {
     printf("Invalid operation: head must not be null");
     exit(1);
   }
-  list *tmp = list_header->list;
+  list *tmp = l->header->list;
   if (!tmp) {
     printf("List already empty.\n");
-    return;
+    return NULL;
   }
-  list_header->list = tmp->next;
+  l->header->list = tmp->next;
   free(tmp);
+  pthread_mutex_unlock(&lock);
 }
 
 void remove_last(head *list_header) {
@@ -149,22 +151,31 @@ my_list* initialize_list(size_t size, double default_value) {
 }
 
 int main() {
-  pthread_t threads[3];
+  pthread_t threads[4];
 
   my_list* list = initialize_list(4, 5);
-  list->value = 10;
 
   pthread_mutex_init(&lock, NULL);
 
-  print_list(list->header);
-
+  list->value = 10;
   pthread_create(&threads[0], NULL, &insert_first, list);
-  pthread_create(&threads[1], NULL, &insert_first, list);
-  pthread_create(&threads[2], NULL, &insert_first, list);
   pthread_join(threads[0], NULL);
+  list->value = 20;
+  pthread_create(&threads[1], NULL, &insert_first, list);
   pthread_join(threads[1], NULL);
+  list->value= 30;
+  pthread_create(&threads[2], NULL, &insert_first, list);
   pthread_join(threads[2], NULL);
 
+  
   print_list(list->header);
+
+  pthread_create(&threads[3], NULL, &remove_first, list);
+  pthread_join(threads[3], NULL);
+  
+  printf("After removing the first element: \n");
+
+  print_list(list->header);
+
   return 0;
 }
