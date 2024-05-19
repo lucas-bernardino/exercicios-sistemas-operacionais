@@ -1,0 +1,8 @@
+O código está no arquivo main.c e o relatório no pdf.
+
+Também estou disponibilizando o github, onde apresento os commits ao longo do trabalho: https://github.com/lucas-bernardino/exercicios-sistemas-operacionais/tree/main/ex4
+
+Só um detalhe que não comentei no PDF: quando eu compilo o código com a flag do -fsanitize=thread, ele dá um erro de "FATAL: ThreadSanitizer: unexpected memory mapping". Porém,
+mesmo com as flag -g ele ainda não mostrava o que estava errado. Fui descobrir que esse erro acontece indepedente do código nos Linux com kernel 
+superior a 6.6.6. Uma solução para isso é setar esse comando: "sudo sysctl vm.mmap_rnd_bits=28" e o erro é resolvido. Como estou rodando PopOS com
+o kernel na versão 6.6.10, preciso setar esse comando. Mais detalhes nessa pergunta do stackoverflow: https://stackoverflow.com/questions/77850769/fatal-threadsanitizer-unexpected-memory-mapping-when-running-on-linux-kernels
