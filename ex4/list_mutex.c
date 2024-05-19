@@ -125,8 +125,10 @@ void *remove_first(void *arg) {
     printf("List already empty.\n");
     return NULL;
   }
+  l->value = l->header->list->value;
   l->header->list = tmp->next;
   free(tmp);
+  l->header->size--;
   pthread_mutex_unlock(&lock);
 }
 
@@ -138,11 +140,16 @@ void *remove_last(void *arg) {
     exit(1);
   }
   list *tmp = l->header->list;
+  if (!tmp) {
+    printf("List already empty.\n");
+    return NULL;
+  }
   while (tmp->next->next) {
     tmp = tmp->next;
   }
   list *tmp_free = tmp->next;
   tmp->next = NULL;
+  l->value = tmp_free->value;
   free(tmp_free);
   l->header->size--;
   pthread_mutex_unlock(&lock);
@@ -227,7 +234,7 @@ int main() {
   pthread_join(threads[3], NULL);
   pthread_join(threads[4], NULL);
   pthread_join(threads[5], NULL);
-  printf("Printing all elements fater removing stuff.: \n");
+  printf("Printing all elements after removing stuff: \n");
   print_list(list);
 
   printf("Freeing memory\n");
