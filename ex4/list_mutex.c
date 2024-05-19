@@ -22,7 +22,7 @@ typedef struct head_t {
 } head;
 
 typedef struct my_list_t {
-  head* header;
+  head *header;
   double value;
   int function_type;
 } my_list;
@@ -52,7 +52,7 @@ static void print_list(head *list_header) {
     printf("Invalid operation: head must not be null");
     exit(1);
   }
-  list* tmp = list_header->list;
+  list *tmp = list_header->list;
   while (tmp) {
     printf("Value stored: %f\n", tmp->value);
     tmp = tmp->next;
@@ -60,8 +60,8 @@ static void print_list(head *list_header) {
 }
 
 void insert_last(void *arg) {
-  my_list *l = (my_list *)arg;
   pthread_mutex_lock(&lock);
+  my_list *l = (my_list *)arg;
   if (!l->header) {
     printf("Invalid operation: head must not be null");
     exit(1);
@@ -89,7 +89,7 @@ void insert_last(void *arg) {
 
 void *insert_first(void *arg) {
   pthread_mutex_lock(&lock);
-  my_list *l = (my_list *) arg;
+  my_list *l = (my_list *)arg;
   if (!l->header) {
     printf("Invalid operation: head must not be null");
     exit(1);
@@ -115,7 +115,7 @@ void *insert_first(void *arg) {
 
 void *remove_first(void *arg) {
   pthread_mutex_lock(&lock);
-  my_list *l = (my_list *) arg;
+  my_list *l = (my_list *)arg;
   if (!l->header) {
     printf("Invalid operation: head must not be null");
     exit(1);
@@ -132,7 +132,7 @@ void *remove_first(void *arg) {
 
 void *remove_last(void *arg) {
   pthread_mutex_lock(&lock);
-  my_list *l = (my_list *) arg;
+  my_list *l = (my_list *)arg;
   if (!l->header) {
     printf("Invalid operation: head must not be null");
     exit(1);
@@ -141,15 +141,15 @@ void *remove_last(void *arg) {
   while (tmp->next->next) {
     tmp = tmp->next;
   }
-  list* tmp_free = tmp->next;
+  list *tmp_free = tmp->next;
   tmp->next = NULL;
   free(tmp_free);
   l->header->size--;
   pthread_mutex_unlock(&lock);
 }
 
-head* initialize_list(size_t size, double default_value) {
-  my_list* l = (my_list *)malloc(sizeof(my_list));
+head *initialize_list(size_t size, double default_value) {
+  my_list *l = (my_list *)malloc(sizeof(my_list));
   if (!l) {
     printf("Error allocating memory with malloc!\n");
     exit(1);
@@ -162,21 +162,21 @@ head* initialize_list(size_t size, double default_value) {
   return l->header;
 }
 
-void* handle_threads_function(void *arg){
-  my_list* p = (my_list*) arg;
+void *handle_threads_function(void *arg) {
+  my_list *p = (my_list *)arg;
   switch (p->function_type) {
-    case INSERT_FIRST:
-      insert_first(p);
-      break;
-    case INSERT_LAST:
-      insert_last(p);
-      break;
-    case REMOVE_FIRST:
-      remove_first(p);
-      break;
-    case REMOVE_LAST:
-      remove_last(p);
-      break;
+  case INSERT_FIRST:
+    insert_first(p);
+    break;
+  case INSERT_LAST:
+    insert_last(p);
+    break;
+  case REMOVE_FIRST:
+    remove_first(p);
+    break;
+  case REMOVE_LAST:
+    remove_last(p);
+    break;
   }
   return NULL;
 }
@@ -185,29 +185,29 @@ int main() {
   pthread_t threads[6];
 
   pthread_mutex_init(&lock, NULL);
-  head* list = initialize_list(4, 5);
-  
-  my_list* p1 = (my_list *)malloc(sizeof(my_list));
+  head *list = initialize_list(4, 5);
+
+  my_list *p1 = (my_list *)malloc(sizeof(my_list));
   p1->header = list;
   p1->value = 10;
   p1->function_type = INSERT_FIRST;
-  my_list* p2 = (my_list *)malloc(sizeof(my_list));
+  my_list *p2 = (my_list *)malloc(sizeof(my_list));
   p2->header = list;
   p2->value = 20;
   p2->function_type = INSERT_FIRST;
-  my_list* p3 = (my_list *)malloc(sizeof(my_list));
+  my_list *p3 = (my_list *)malloc(sizeof(my_list));
   p3->header = list;
   p3->value = 30;
   p3->function_type = INSERT_LAST;
-  my_list* p4 = (my_list *)malloc(sizeof(my_list));
+  my_list *p4 = (my_list *)malloc(sizeof(my_list));
   p4->header = list;
   p4->value = 0;
   p4->function_type = REMOVE_FIRST;
-  my_list* p5 = (my_list *)malloc(sizeof(my_list));
+  my_list *p5 = (my_list *)malloc(sizeof(my_list));
   p5->header = list;
   p5->value = 0;
   p5->function_type = REMOVE_FIRST;
-  my_list* p6 = (my_list *)malloc(sizeof(my_list));
+  my_list *p6 = (my_list *)malloc(sizeof(my_list));
   p6->header = list;
   p6->value = 0;
   p6->function_type = REMOVE_LAST;
