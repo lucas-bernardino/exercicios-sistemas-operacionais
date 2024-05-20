@@ -31,6 +31,7 @@ typedef struct my_list_t {
   head *header;
   double value;
   int function_type;
+  int thread_id;
 } my_list;
 
 // Inserts a value if the list is empty;
@@ -194,57 +195,76 @@ void *handle_threads_function(void *arg) {
   return NULL;
 }
 
-void produzir(int thread_id, my_list *l) {
+void *produzir(void *arg) {
 
+  my_list *p = (my_list *)arg;
   pthread_mutex_lock(&lock);
+  if (elem_id == 20) {
+    printf("Alcançou limite de producao. \nSaindo...\n");
+    exit(0);
+  }
   int meu_elemento = elem_id;
   elem_id++;
   pthread_mutex_unlock(&lock);
 
   sem_wait(&sem_prod);
-
-  printf("[%d]Produzindo %d...", thread_id, meu_elemento);
+  printf("[%d]Produzindo %d...\n", p->thread_id, meu_elemento);
   usleep(333000);
-  insert_last(l);
-  printf("[%d]Produzido", thread_id);
+  insert_last(p);
+  printf("[%d]Produzido\n", p->thread_id);
 
   sem_post(&sem_cons);
 }
 
-void consumir(int thread_id, my_list *l) {
-  printf("[%d]Consumindo...", thread_id);
+void *consumir(void *arg) {
+  my_list *p = (my_list *)arg;
+  printf("[%d]Consumindo...\n", p->thread_id);
   sem_wait(&sem_cons);
 
-  remove_first(l);
+  remove_first(p);
   usleep(500000);
-  printf("[%d]Consumido %f", thread_id, l->value);
+  printf("[%d]Consumido %f\n", p->thread_id, p->value);
 
   sem_post(&sem_prod);
 }
 
+/*
+ - Utilize semáforos POSIX (sem_post / sem_wait) para proteger a utilização da
+lista (produzir somente se a lista tem espaço, consumir somente se a fila tem
+elementos)
+
+- Implemente um programa que inicialize a lista com no máximo i elementos, n
+produtores e m consumidores, e produza no máximo x itens.
+
+Escreva um pequeno relatório
+- Apresentado a implementação e decisões
+- Mostrando a saída com fila de tamanho 4, 2 produtores, 2 consumidores, 20
+itens, e tempo de execução.
+*/
+
 int main() {
-  pthread_t threads[6];
+  pthread_t threads[50];
 
   pthread_mutex_init(&lock, NULL);
-  head *list = initialize_list(4, 5);
+  head *list = initialize_list(4, 0);
 
   sem_init(&sem_prod, 0, 2);
   sem_init(&sem_cons, 0, 2);
 
-  my_list *p1 = (my_list *)malloc(sizeof(my_list));
-  p1->header = list;
-  p1->value = 10;
-  p1->function_type = INSERT_FIRST;
+  for (int i = 0; i < 50; i++) {
+    my_list *p0 = (my_list *)malloc(sizeof(my_list));
+    p0->header = list;
+    p0->value = 10;
+    p0->thread_id = i;
 
-  pthread_create(&threads[0], NULL, &handle_threads_function, p1);
-  pthread_join(threads[1], NULL);
+    my_list *p1 = (my_list *)malloc(sizeof(my_list));
+    p1->header = list;
+    p1->value = 10;
+    p1->thread_id = i;
 
-  printf("Printing after insertion: \n");
-  print_list(list);
-
-  free(p1);
-
-  printf("Program exit sucessfully\n");
+    pthread_create(&threads[0], NULL, &produzir, p0);
+    pthread_create(&threads[1], NULL, &consumir, p1);
+  }
 
   return 0;
 }
