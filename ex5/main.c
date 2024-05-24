@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include <unistd.h>
 
 #define INSERT_FIRST 1
@@ -10,13 +11,18 @@
 #define REMOVE_FIRST 3
 #define REMOVE_LAST 4
 
+#define CONSUMIDORAS 3
+
 pthread_mutex_t lock;
-pthread_mutex_t lock2;
 
 sem_t sem_prod;
 sem_t sem_cons;
 
 int elem_id = 0;
+int count_consm = 0;
+
+bool canFinish = false;
+bool lastThread = false;
 
 typedef struct list_t {
   double value;
@@ -62,7 +68,6 @@ static void print_list(head *list_header) {
   }
   list *tmp = list_header->list;
   while (tmp) {
-    printf("Value stored: %f\n", tmp->value);
     tmp = tmp->next;
   }
 }
@@ -206,6 +211,9 @@ void *produzir(void *arg) {
     my_list *p = (my_list *)arg;
     pthread_mutex_lock(&lock);
     if (elem_id == 20) {
+      printf("Alcançou limite de producao. Thread [%d] produtora saindo.\n",
+             p->thread_id);
+      canFinish = true;
       pthread_mutex_unlock(&lock);
       return NULL;
     }
@@ -225,42 +233,42 @@ void *produzir(void *arg) {
 void *consumir(void *arg) {
   for (;;) {
     my_list *p = (my_list *)arg;
-    // if (p->header->size > 0) {
     pthread_mutex_lock(&lock);
-    if (p->header->size <= 0 && elem_id == 20) {
+    if (canFinish) {
+      printf("Alcançou limite de producao. Thread [%d] consumidora saindo.\n",
+             p->thread_id);
+      count_consm++;
       pthread_mutex_unlock(&lock);
-      return NULL;
+      break;
     }
     pthread_mutex_unlock(&lock);
     printf("[%d]Consumindo...\n", p->thread_id);
     sem_wait(&sem_cons);
+    pthread_mutex_lock(&lock);
+    if (lastThread) {
+      printf("Alcançou limite de producao. Thread [%d] consumidora saindo.\n",
+             p->thread_id);
+      return NULL;
+    }
+    pthread_mutex_unlock(&lock);
     usleep(333000);
     remove_first(p);
     printf("[%d]Consumido %f\n", p->thread_id, p->value);
     sem_post(&sem_prod);
-    // }
   }
+  pthread_mutex_lock(&lock);
+  if (count_consm == (CONSUMIDORAS - 1)) {
+    sem_post(&sem_cons);
+    lastThread = true;
+  }
+  pthread_mutex_unlock(&lock);
+  return NULL;
 }
 
-/*
- - Utilize semáforos POSIX (sem_post / sem_wait) para proteger a utilização da
-lista (produzir somente se a lista tem espaço, consumir somente se a fila tem
-elementos)
-
-- Implemente um programa que inicialize a lista com no máximo i elementos, n
-produtores e m consumidores, e produza no máximo x itens.
-
-Escreva um pequeno relatório
-- Apresentado a implementação e decisões
-- Mostrando a saída com fila de tamanho 4, 2 produtores, 2 consumidores, 20
-itens, e tempo de execução.
-*/
-
 int main() {
-  pthread_t threads[4];
+  pthread_t threads[5];
 
   pthread_mutex_init(&lock, NULL);
-  pthread_mutex_init(&lock2, NULL);
   head *list = initialize_list(0, 0);
 
   sem_init(&sem_prod, 0, 4);
@@ -279,22 +287,32 @@ int main() {
   my_list *p2 = (my_list *)calloc(1, sizeof(my_list));
   p2->header = list;
   p2->value = 10;
-  p2->thread_id = 0;
+  p2->thread_id = 2;
 
   my_list *p3 = (my_list *)calloc(1, sizeof(my_list));
   p3->header = list;
   p3->value = 10;
-  p3->thread_id = 1;
+  p3->thread_id = 3;
+
+  my_list *p4 = (my_list *)calloc(1, sizeof(my_list));
+  p4->header = list;
+  p4->value = 10;
+  p4->thread_id = 4;
 
   pthread_create(&threads[0], NULL, &produzir, p0);
   pthread_create(&threads[1], NULL, &produzir, p1);
+
   pthread_create(&threads[2], NULL, &consumir, p2);
   pthread_create(&threads[3], NULL, &consumir, p3);
+  pthread_create(&threads[4], NULL, &consumir, p4);
 
   pthread_join(threads[0], NULL);
   pthread_join(threads[1], NULL);
   pthread_join(threads[2], NULL);
   pthread_join(threads[3], NULL);
+  pthread_join(threads[4], NULL);
+
+  printf("Fim.\n");
 
   return 0;
 }
