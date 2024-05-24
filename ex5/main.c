@@ -11,6 +11,7 @@
 #define REMOVE_LAST 4
 
 pthread_mutex_t lock;
+pthread_mutex_t lock2;
 
 sem_t sem_prod;
 sem_t sem_cons;
@@ -42,7 +43,7 @@ static void insert_empty_list(void *arg) {
     printf("Invalid operation: head must not be null");
     exit(1);
   }
-  list *new_node = (list *)malloc(sizeof(list));
+  list *new_node = (list *)calloc(1, sizeof(list));
   if (!new_node) {
     printf("Error allocating memory with malloc!\n");
     exit(1);
@@ -82,7 +83,7 @@ void insert_last(void *arg) {
   while (tmp->next) {
     tmp = tmp->next;
   }
-  list *new_node = (list *)malloc(sizeof(list));
+  list *new_node = (list *)calloc(1, sizeof(list));
   if (!new_node) {
     printf("Error allocating memory with malloc!\n");
     exit(1);
@@ -107,7 +108,7 @@ void *insert_first(void *arg) {
     pthread_mutex_unlock(&lock);
     return NULL;
   }
-  list *node = (list *)malloc(sizeof(list));
+  list *node = (list *)calloc(1, sizeof(list));
   if (!node) {
     printf("Error allocating memory with malloc!\n");
     exit(1);
@@ -136,6 +137,9 @@ void *remove_first(void *arg) {
   l->header->list = tmp->next;
   free(tmp);
   l->header->size--;
+  if (l->header->size == 0) {
+    l->header->list = NULL;
+  }
   pthread_mutex_unlock(&lock);
 }
 
@@ -163,13 +167,14 @@ void *remove_last(void *arg) {
 }
 
 head *initialize_list(size_t size, double default_value) {
-  my_list *l = (my_list *)malloc(sizeof(my_list));
+  my_list *l = (my_list *)calloc(1, sizeof(my_list));
   if (!l) {
     printf("Error allocating memory with malloc!\n");
     exit(1);
   }
-  l->header = (head *)malloc(sizeof(head));
+  l->header = (head *)calloc(1, sizeof(head));
   l->value = default_value;
+  l->header->list = NULL;
   for (size_t i = 0; i < size; i++) {
     insert_last(l);
   }
@@ -197,35 +202,44 @@ void *handle_threads_function(void *arg) {
 
 void *produzir(void *arg) {
 
-  my_list *p = (my_list *)arg;
-  pthread_mutex_lock(&lock);
-  if (elem_id == 20) {
-    printf("Alcançou limite de producao. \nSaindo...\n");
-    exit(0);
+  for (;;) {
+    my_list *p = (my_list *)arg;
+    pthread_mutex_lock(&lock);
+    if (elem_id == 20) {
+      pthread_mutex_unlock(&lock);
+      return NULL;
+    }
+    int meu_elemento = elem_id;
+    elem_id++;
+    pthread_mutex_unlock(&lock);
+    sem_wait(&sem_prod);
+    printf("[%d]Produzindo %d...\n", p->thread_id, meu_elemento);
+    usleep(500000);
+    p->value = meu_elemento;
+    insert_last(p);
+    printf("[%d]Produzido\n", p->thread_id);
+    sem_post(&sem_cons);
   }
-  int meu_elemento = elem_id;
-  elem_id++;
-  pthread_mutex_unlock(&lock);
-
-  sem_wait(&sem_prod);
-  printf("[%d]Produzindo %d...\n", p->thread_id, meu_elemento);
-  usleep(333000);
-  insert_last(p);
-  printf("[%d]Produzido\n", p->thread_id);
-
-  sem_post(&sem_cons);
 }
 
 void *consumir(void *arg) {
-  my_list *p = (my_list *)arg;
-  printf("[%d]Consumindo...\n", p->thread_id);
-  sem_wait(&sem_cons);
-
-  remove_first(p);
-  usleep(500000);
-  printf("[%d]Consumido %f\n", p->thread_id, p->value);
-
-  sem_post(&sem_prod);
+  for (;;) {
+    my_list *p = (my_list *)arg;
+    // if (p->header->size > 0) {
+    pthread_mutex_lock(&lock);
+    if (p->header->size <= 0 && elem_id == 20) {
+      pthread_mutex_unlock(&lock);
+      return NULL;
+    }
+    pthread_mutex_unlock(&lock);
+    printf("[%d]Consumindo...\n", p->thread_id);
+    sem_wait(&sem_cons);
+    usleep(333000);
+    remove_first(p);
+    printf("[%d]Consumido %f\n", p->thread_id, p->value);
+    sem_post(&sem_prod);
+    // }
+  }
 }
 
 /*
@@ -243,28 +257,44 @@ itens, e tempo de execução.
 */
 
 int main() {
-  pthread_t threads[50];
+  pthread_t threads[4];
 
   pthread_mutex_init(&lock, NULL);
-  head *list = initialize_list(4, 0);
+  pthread_mutex_init(&lock2, NULL);
+  head *list = initialize_list(0, 0);
 
-  sem_init(&sem_prod, 0, 2);
-  sem_init(&sem_cons, 0, 2);
+  sem_init(&sem_prod, 0, 4);
+  sem_init(&sem_cons, 0, 0);
 
-  for (int i = 0; i < 50; i++) {
-    my_list *p0 = (my_list *)malloc(sizeof(my_list));
-    p0->header = list;
-    p0->value = 10;
-    p0->thread_id = i;
+  my_list *p0 = (my_list *)calloc(1, sizeof(my_list));
+  p0->header = list;
+  p0->value = 10;
+  p0->thread_id = 0;
 
-    my_list *p1 = (my_list *)malloc(sizeof(my_list));
-    p1->header = list;
-    p1->value = 10;
-    p1->thread_id = i;
+  my_list *p1 = (my_list *)calloc(1, sizeof(my_list));
+  p1->header = list;
+  p1->value = 10;
+  p1->thread_id = 1;
 
-    pthread_create(&threads[0], NULL, &produzir, p0);
-    pthread_create(&threads[1], NULL, &consumir, p1);
-  }
+  my_list *p2 = (my_list *)calloc(1, sizeof(my_list));
+  p2->header = list;
+  p2->value = 10;
+  p2->thread_id = 0;
+
+  my_list *p3 = (my_list *)calloc(1, sizeof(my_list));
+  p3->header = list;
+  p3->value = 10;
+  p3->thread_id = 1;
+
+  pthread_create(&threads[0], NULL, &produzir, p0);
+  pthread_create(&threads[1], NULL, &produzir, p1);
+  pthread_create(&threads[2], NULL, &consumir, p2);
+  pthread_create(&threads[3], NULL, &consumir, p3);
+
+  pthread_join(threads[0], NULL);
+  pthread_join(threads[1], NULL);
+  pthread_join(threads[2], NULL);
+  pthread_join(threads[3], NULL);
 
   return 0;
 }
